@@ -42,12 +42,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(currentUser);
       
       if (currentUser) {
-        const userProfile = await userOperations.getProfile(currentUser.id);
-        setProfile(userProfile);
-        
-        // Update last login only if profile exists
-        if (userProfile) {
-          await authOperations.updateLastLogin(currentUser.id);
+        try {
+          const userProfile = await userOperations.getProfile(currentUser.id);
+          setProfile(userProfile);
+          
+          // Update last login only if profile exists
+          if (userProfile) {
+            await authOperations.updateLastLogin(currentUser.id);
+          } else {
+            // Profile doesn't exist yet - this is normal for new users
+            console.log('User profile not found, will be created on next login or signup')
+          }
+        } catch (profileError) {
+          console.error('Error loading user profile:', profileError);
+          // Don't throw error - allow user to continue without profile
         }
       }
     } catch (error) {

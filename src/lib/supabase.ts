@@ -305,22 +305,37 @@ export const authOperations = {
 // User profile operations
 export const userOperations = {
   async getProfile(userId: string): Promise<User | null> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null // No profile found - this is expected, don't log as error
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No profile found - this is expected for new users, don't log as error
+          console.log(`No profile found for user ${userId}, this is normal for new users`)
+          return null
+        }
+        
+        // Log other errors for tracking
+        console.error('Error fetching profile:', error)
+        await errorOperations.logSupabaseError(error, 'getProfile')
+        throw error
       }
       
-      // Log other errors for tracking
-      await errorOperations.logSupabaseError(error, 'getProfile')
+      return data
+    } catch (error: any) {
+      // Handle network errors or other unexpected errors
+      if (error.code === 'PGRST116') {
+        console.log(`No profile found for user ${userId}, this is normal for new users`)
+        return null
+      }
+      
+      console.error('Unexpected error in getProfile:', error)
       throw error
     }
-    return data
   },
 
   async getAllUsers(): Promise<User[]> {
