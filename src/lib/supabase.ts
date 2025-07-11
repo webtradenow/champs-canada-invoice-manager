@@ -310,29 +310,16 @@ export const userOperations = {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .limit(1)
       
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No profile found - this is expected for new users, don't log as error
-          console.log(`No profile found for user ${userId}, this is normal for new users`)
-          return null
-        }
-        
-        // Log other errors for tracking
         console.error('Error fetching profile:', error)
         await errorOperations.logSupabaseError(error, 'getProfile')
         throw error
       }
       
-      return data
+      return data[0] || null
     } catch (error: any) {
-      // Handle network errors or other unexpected errors
-      if (error.code === 'PGRST116') {
-        console.log(`No profile found for user ${userId}, this is normal for new users`)
-        return null
-      }
-      
       console.error('Unexpected error in getProfile:', error)
       throw error
     }
